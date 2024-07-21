@@ -21,10 +21,10 @@ DEBUG_MODE = False
 
 def main() -> None:
     st.set_page_config(
-        page_title="AUTOSAR Chat",
+        page_title="AUTOSAR RAG",
         page_icon=":orange_heart:",
     )
-    st.title("Local RAG for retrieving AUTOSAR documents with Ollama and Chroma")
+    st.title("Local RAG for retrieving AUTOSAR documents")
     st.markdown("##### :orange_heart: built using [autosar-rag](https://github.com/yyxxrr739/autosar-rag)")
 
 
