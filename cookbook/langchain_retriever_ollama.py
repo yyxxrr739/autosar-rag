@@ -13,7 +13,7 @@ cookbook_dir = Path(__file__).parent
 embeddings = (
     OllamaEmbeddings(model="llama3")
 )
-llm = Ollama(model="llama3")
+llm = Ollama(model="llama3.1")
 
 # Load, chunk and index the contents of the blog.
 state_of_the_union = cookbook_dir.joinpath("data/demo/state_of_the_union.txt")

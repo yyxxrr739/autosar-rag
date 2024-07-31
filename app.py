@@ -167,7 +167,7 @@ def main(enable_debug: bool = False) -> None:
     # Side bar configuration for llm and embeddings
     llm_model = st.sidebar.selectbox(
         "Select Model", 
-        options=["llama3", "phi3", "openhermes", "llama2"]
+        options=["llama3.1", "llama3", "phi3", "openhermes", "llama2"]
     )
     embeddings_model = st.sidebar.selectbox(
         "Select Embeddings",
