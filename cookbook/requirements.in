@@ -1,0 +1,12 @@
+ollama
+pgvector
+phidata
+psycopg[binary]
+pypdf
+sqlalchemy
+streamlit
+bs4
+duckduckgo-search
+langchain
+langchain-community
+debugpy
