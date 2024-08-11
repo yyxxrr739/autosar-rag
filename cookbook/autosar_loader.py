@@ -35,7 +35,7 @@ class AutosarLoader(BaseLoader):
 
         with PdfReader(self.file_path) as reader:
             page_number = 0
-            for page in reader.pages[0:10]:
+            for page in reader.pages[0:5]:
                 page.extract_text(visitor_text=visitor_body)
                 yield Document(
                     page_content="".join(str_list),
