@@ -3,12 +3,10 @@
 from typing import List
 import debugpy
 import streamlit as st
-# from phi.assistant import Assistant
 from phi.document import Document
-# from phi.document.reader.website import WebsiteReader
-from phi.document.reader.pdf import PDFReader
 from phi.utils.log import logger
-from assistant import get_rag_assistant
+from docparser.docparser import pdf_parser
+from assistant.assistant import get_rag_assistant
 
 def restart_assistant():
     """Restart assistant."""
@@ -20,7 +18,7 @@ def restart_assistant():
         st.session_state["file_uploader_key"] += 1
     st.rerun()
 
-def check_model_change(llm_model, embeddings_model):
+def update_llm_config(llm_model, embeddings_model):
     """Check llm config."""
     # Set assistant_type in session state
     if "llm_model" not in st.session_state:
@@ -41,7 +39,7 @@ def check_model_change(llm_model, embeddings_model):
 def get_or_create_assistant(llm_model, embeddings_model):
     """Get or create assistant."""
     if "rag_assistant" not in st.session_state or st.session_state["rag_assistant"] is None:
-        logger.info(f"---*--- Creating {llm_model} Assistant ---*---")
+        logger.info("---*--- Creating %s Assistant ---*---", llm_model)
         rag_assistant = get_rag_assistant(llm_model=llm_model, embeddings_model=embeddings_model)
         st.session_state["rag_assistant"] = rag_assistant
     else:
@@ -49,13 +47,14 @@ def get_or_create_assistant(llm_model, embeddings_model):
 
     try:
         st.session_state["rag_assistant_run_id"] = rag_assistant.create_run()
-    except Exception:
-        st.warning("Could not create assistant, is the database running?")
+    except (ConnectionError, TimeoutError) as e:
+        st.warning(f"Could not create assistant: {str(e)}. Is the database running?")
         return None
 
     return rag_assistant
 
 def load_assistant_chat_history(rag_assistant):
+    """Load chat history from the assistant's memory."""
     assistant_chat_history = rag_assistant.memory.get_chat_history()
     if len(assistant_chat_history) > 0:
         logger.debug("Loading chat history")
@@ -64,7 +63,7 @@ def load_assistant_chat_history(rag_assistant):
         logger.debug("No chat history found")
         st.session_state["messages"] = [{
             "role": "assistant", 
-            "content": "Upload a doc and ask me questions..."
+            "content": "Upload a doc or ask me questions about AUTOSAR directly..."
         }]
 
 def load_knowledge_base(rag_assistant):
@@ -93,8 +92,7 @@ def process_uploaded_file(rag_assistant, uploaded_file):
     rag_name = uploaded_file.name.split(".")[0]
     if f"{rag_name}_uploaded" not in st.session_state:
         # chunk_size and separators can be set here
-        reader = PDFReader(chunk_size=300)
-        rag_documents: List[Document] = reader.read(uploaded_file)
+        rag_documents: List[Document] = pdf_parser(uploaded_file, chunk_size=300)
         if rag_documents:
             rag_assistant.knowledge_base.load_documents(rag_documents, upsert=True)
         else:
@@ -112,12 +110,9 @@ def initialize_debugger(enable_debug: bool = False):
 
 def set_page_config():
     """Set page config."""
-    st.set_page_config(
-        page_title="AUTOSAR RAG",
-        page_icon=":orange_heart:",
-    )
-    st.title("Local RAG for retrieving AUTOSAR documents")
-    st.markdown("##### :orange_heart: built using [autosar-rag](https://github.com/yyxxrr739/autosar-rag)")
+    st.image("assets/robot_autosar.jpeg")  # Adjust the width as needed
+    st.markdown("## :oncoming_automobile: Local AUTOSAR assistant")
+    st.markdown("Github: [autosar-rag](https://github.com/yyxxrr739/autosar-rag)")
 
 def update_session_content(session_messages, rag_assistant):
     """Update session content."""
@@ -150,7 +145,7 @@ def load_assistant_storage(rag_assistant, llm_model, embeddings_model):
         rag_assistant_run_ids: List[str] = rag_assistant.storage.get_all_run_ids()
     new_rag_assistant_run_id = st.sidebar.selectbox("Run ID", options=rag_assistant_run_ids)
     if st.session_state["rag_assistant_run_id"] != new_rag_assistant_run_id:
-        logger.info(f"---*--- Loading {llm_model} run: {new_rag_assistant_run_id} ---*---")
+        logger.info("---*--- Loading %s run: %s ---*---", llm_model, new_rag_assistant_run_id)
         st.session_state["rag_assistant"] = get_rag_assistant(
             llm_model=llm_model, embeddings_model=embeddings_model, run_id=new_rag_assistant_run_id
         )
@@ -175,7 +170,7 @@ def main(enable_debug: bool = False) -> None:
         help="When you change the embeddings model, the documents will need to be added again.",
     )
 
-    check_model_change(llm_model, embeddings_model)
+    update_llm_config(llm_model, embeddings_model)
 
     # create instant of assistant
     rag_assistant = get_or_create_assistant(llm_model, embeddings_model)
