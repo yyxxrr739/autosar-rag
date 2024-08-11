@@ -10,3 +10,4 @@ duckduckgo-search
 langchain
 langchain-community
 debugpy
+qdrant-client
