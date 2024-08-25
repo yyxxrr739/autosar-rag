@@ -3,6 +3,7 @@ from typing import Optional
 from phi.assistant import Assistant
 from phi.knowledge import AssistantKnowledge
 from phi.llm.ollama import Ollama
+from phi.llm.openai import OpenAIChat
 from phi.embedder.ollama import OllamaEmbedder
 from phi.vectordb.pgvector import PgVector2
 from phi.storage.assistant.postgres import PgAssistantStorage
@@ -37,11 +38,16 @@ def get_rag_assistant(
         num_documents=3,
     )
 
+    if llm_model == "gpt-3.5-turbo":
+        llm = OpenAIChat(model="gpt-3.5-turbo", stop="</answer>")
+    else:
+        llm = Ollama(model=llm_model)
+    
     return Assistant(
         name="local_rag_assistant",
         run_id=run_id,
         user_id=user_id,
-        llm=Ollama(model=llm_model),
+        llm=llm,
         storage=PgAssistantStorage(table_name="local_rag_assistant", db_url=db_url),
         knowledge_base=knowledge,
         description="You are an AI called 'RAGit' and your task is to answer questions using the provided information",
@@ -60,4 +66,4 @@ def get_rag_assistant(
         markdown=True,
         add_datetime_to_instructions=True,
         debug_mode=debug_mode,
-    )
+    )        
