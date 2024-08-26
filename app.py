@@ -82,7 +82,7 @@ def load_knowledge_base(rag_assistant):
         process_uploaded_file(rag_assistant, uploaded_file)
 
     if rag_assistant.knowledge_base.vector_db:
-        if st.sidebar.button("Clear Knowledge Base"):
+        if st.sidebar.button("Clear Knowledge Base", help="Clear all documents from the knowledge base."):
             rag_assistant.knowledge_base.vector_db.clear()
             st.sidebar.success("Knowledge base cleared")
 
@@ -110,9 +110,11 @@ def initialize_debugger(enable_debug: bool = False):
 
 def set_page_config():
     """Set page config."""
-    st.image("assets/robot_autosar.jpeg")  # Adjust the width as needed
-    st.markdown("## :oncoming_automobile: Local AUTOSAR assistant")
+    st.image("assets/robot_autosar.jpeg", width=700)  # Adjust the width as needed
+    st.markdown("## :oncoming_automobile: Local AUTOSAR Assistant")
+    st.markdown("Welcome to the Local AUTOSAR Assistant. This tool helps you with AUTOSAR-related tasks.")
     st.markdown("Github: [autosar-rag](https://github.com/yyxxrr739/autosar-rag)")
+    st.markdown("---")
 
 def update_session_content(session_messages, rag_assistant):
     """Update session content."""
@@ -185,7 +187,10 @@ def main(enable_debug: bool = False) -> None:
 
     load_assistant_storage(rag_assistant, llm_model, embeddings_model)
 
-    if st.sidebar.button("New Run"):
+    if st.sidebar.button(
+        "New Run",
+        help="Reset the session and reload the assistant."
+    ):
         restart_assistant()
 
 if __name__ == "__main__":
