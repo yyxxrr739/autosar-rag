@@ -198,12 +198,16 @@ def update_llm_config(llm_model, embeddings_model):
         st.session_state["embeddings_model_updated"] = True
         restart_assistant()
 
-def get_or_create_assistant(llm_model, embeddings_model):
+def get_or_create_assistant(llm_model, embeddings_model, custom_prompt):
     """Get or create assistant."""
-    if "rag_assistant" not in st.session_state or st.session_state["rag_assistant"] is None:
+    if ("rag_assistant" not in st.session_state or
+        st.session_state["rag_assistant"] is None or
+        st.session_state.get("custom_prompt") != custom_prompt):
+
         logger.info("---*--- Creating %s Assistant ---*---", llm_model)
-        rag_assistant = get_rag_assistant(llm_model=llm_model, embeddings_model=embeddings_model)
+        rag_assistant = get_rag_assistant(llm_model=llm_model, embeddings_model=embeddings_model, instructions=custom_prompt)
         st.session_state["rag_assistant"] = rag_assistant
+        st.session_state["custom_prompt"] = custom_prompt  # Store the custom prompt in session state
     else:
         rag_assistant = st.session_state["rag_assistant"]
 
@@ -362,8 +366,17 @@ def main(enable_debug: bool = False) -> None:
 
     update_llm_config(llm_model, embeddings_model)
 
+    # Add a text input in the sidebar for custom prompt
+    custom_prompt = st.sidebar.text_area(
+        "Enter system instruction:",
+        placeholder=(
+            "I want you to be a good assistant...\n"
+            "You need to think like a human...\n"
+        )
+    )
+
     # create instant of assistant
-    rag_assistant = get_or_create_assistant(llm_model, embeddings_model)
+    rag_assistant = get_or_create_assistant(llm_model, embeddings_model, custom_prompt)
 
     load_assistant_chat_history(rag_assistant)
 
