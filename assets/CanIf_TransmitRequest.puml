@@ -1,0 +1,29 @@
+@startuml
+/'tansmission request with a single CAN Driver'/
+activate CanIf_User
+participant SchM <<module>>
+participant CanIf <<module>>
+participant Can <<module>>
+participant CanController <<pheripheral>>
+
+CanIf_User -> CanIf: CanIf_Transmit(Std_ReturnType, PduIdType, const PduInfoType*)
+
+activate CanIf
+CanIf -> Can: Can_Write(Std_ReturnType, Can_HwHandleType, const Can_PduType*)
+
+activate Can
+group alt CAN Controller [CAN controller hardware object is free]
+    activate CanController
+    Can -> CanController: Copy L-PDU into CAN Hardware()
+    CanController -->> Can: Copy L-PDU into CAN Hardware()
+    deactivate CanController
+Can -->> CanIf: Can_Write()
+else CAN controller hardware object is busy
+Can -->> CanIf: Can_Write()
+CanIf -> CanIf: Insert L-PDU in transimt buffer
+deactivate Can
+end
+CanIf -->> CanIf_User: CanIf_Transmit()
+deactivate CanIf
+deactivate CanIf_User
+@enduml

@@ -1,0 +1,32 @@
+@startuml
+/'The following chart shows the communication between the AUTOSAR COM module
+and the PDU Router.'/
+participant Com <<module>>
+participant PduR <<module>>
+group seq Reception CAN
+
+    PduR -> Com: Com_RxIndication(PduIdType, const PduInfoType*)
+    activate Com
+    Com -> Com: Internal processing()
+    Com -->> PduR
+    deactivate Com
+end
+
+group seq Transmission CAN
+    Com -> PduR: PduR_ComTransmit(Std_ReturnType, PduIdType, const PduInfoType*): Std_ReturnType
+    activate Com
+    activate PduR
+    PduR -->> Com: E_OK()
+    deactivate PduR
+    deactivate Com
+
+    PduR -> Com: Com_TxConfirmation(PduIdType, Std_ReturnType)
+    activate Com
+    activate PduR
+    Com -> Com: Internal processing()
+    Com -->> PduR
+    deactivate Com
+    deactivate PduR
+
+end
+@enduml

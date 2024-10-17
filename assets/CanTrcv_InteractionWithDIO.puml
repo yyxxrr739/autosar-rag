@@ -1,0 +1,79 @@
+@startuml
+/'CAN Transceiver Driver interacts with DIO module'/
+
+participant IntegrationCode
+participant EcuM <<module>>
+participant ComM <<module>>
+participant CanSM <<module>>
+participant CanIf <<module>>
+participant CanTrcv <<module>>
+participant Dio <<module>>
+participant CanTransceiverHardware <<Peripheral>>
+
+EcuM -> ComM: ComM_EcuM_WakeUpIndication(NetworkHandleType)
+activate EcuM
+activate ComM
+ComM -->> EcuM: ComM_EcuM_WakeUpIndication()
+
+deactivate ComM
+deactivate EcuM
+ComM -> CanSM: CanSM_RequestComMode(COMM_FULL_COMMUNICATION)
+activate ComM
+activate CanSM
+CanSM -> CanIf: CanIf_SetTrcvMode(CANIF_TRCV_MODE_NORMAL)
+alt Start CAN network
+Dio -[hidden]-> Dio
+end
+activate CanIf
+CanIf -> CanTrcv: CanTrcv_SetOpMode(CANIF_TRCV_MODE_NORMAL)
+activate CanTrcv
+CanTrcv -> Dio: Dio_WriteChannel(Dio_ChannelType, Dio_LevelType)
+activate Dio
+Dio -> CanTransceiverHardware: set/reset HW ports()
+activate CanTransceiverHardware
+deactivate CanTransceiverHardware
+note right CanTransceiverHardware: Comment\n CAN transceiver hardware\n is now in NORMAL\n mode.\n It's \n ready to operate.
+Dio -->> CanTrcv: Dio_WriteChannel()
+deactivate Dio
+CanTrcv ->> Dio: Dio_WriteChannel(Dio_ChannelType, Dio_LevelType)
+activate Dio
+Dio -> CanTransceiverHardware: set/reset HW ports()
+activate CanTransceiverHardware
+deactivate CanTransceiverHardware
+note right CanTransceiverHardware: Comment\n CAN transceiver hardware\n is now in STANDBY\n mode. No transmitting or\n receiving possible. It's \n ready to wake up again.
+Dio -->> CanTrcv: Dio_WriteChannel()
+deactivate Dio
+CanTrcv -->> CanIf: CanTrcv_SetOpMode()
+deactivate CanTrcv
+CanIf -->> CanSM: CanIf_SetTrcvMode()
+deactivate CanIf
+CanSM -->> ComM: CanSM_RequestComMode()
+deactivate CanSM
+
+
+
+
+
+
+
+
+
+activate CanIf
+CanIf -> Can: Can_Write(Std_ReturnType, Can_HwHandleType, const Can_PduType*)
+
+activate Can
+group alt CAN Controller [CAN controller hardware object is free]
+    activate CanController
+    Can -> CanController: Copy L-PDU into CAN Hardware()
+    CanController -->> Can: Copy L-PDU into CAN Hardware()
+    deactivate CanController
+Can -->> CanIf: Can_Write()
+else CAN controller hardware object is busy
+Can -->> CanIf: Can_Write()
+CanIf -> CanIf: Insert L-PDU in transimt buffer
+deactivate Can
+end
+CanIf -->> CanIf_User: CanIf_Transmit()
+deactivate CanIf
+deactivate CanIf_User
+@enduml
