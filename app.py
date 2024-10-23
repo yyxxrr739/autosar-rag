@@ -11,156 +11,9 @@ from docparser.docparser import pdf_parser
 from assistant.assistant import get_rag_assistant
 from posthdl.puml2img import generate_plantuml_image
 
-autosar_basic_puml = """
-@startuml
-/'AUTOSAR SW layers include: 
-- System Services
-- Onboard Device Abstraction
-- Microcontroller Driver
-- Memory Services
-- Memory Hardware Abstraction
-- Memory Drivers
-- Communication Services
-- Communication Hardware Abstraction
-- Communication Drivers
-- I/O Hardware Abstraction
-- I/O Drivers
-- Complex Drivers'/
-
-/'ASW: application software layer'/
-rectangle "ASW" #gray {
-[SWC1]
-[SWC2]
-}
-
-/'RTE: run-time environment layer'/
-rectangle "RTE" #gray
-
-/'BSW: basic software layer'/
-rectangle "BSW" {
-    rectangle "Stack System" {
-        rectangle "System Services" #MediumPurple {
-            [AUTOSAR OS] /'AUTOSAR operationing system'/
-            [Dem] /'Diagnostic Event Manager'/
-            [EcuM] /'ECU State Manager'/
-            [FiM] /'Function Inhibition Manager'/
-            [Det] /'Default Error Tracer'/
-            [Dlt] /'Diagnostic Log and Trace'/
-            [Csm] /'Crypto Service Manager'/
-            [StbM] /'Synchronized Time-Base Manager'/
-            [Tm] /'Time Service'/
-            [WdgM] /'Watchdog Manager'/
-            [ComM] /'COM Manager'/
-            [BswM] /'BSW Mode Manager'/
-        }
-        rectangle "Onboard Device Abstraction" #YellowGreen {
-            [WdgIf] /'Watchdog Interface'/
-        }
-        rectangle "Microcontroller Driver" #Pink {
-            [Gpt] /'General Purpose Timer Driver'/
-            [Wdg] /'Watchdog Driver'/
-            [Mcu] /'Microcontroller Driver'/
-            [CorTst] /'Core Test'/
-        }
-
-        "System Services" -[hidden]> "Onboard Device Abstraction"
-        "System Services" -[hidden]> "Microcontroller Driver"
-        "Onboard Device Abstraction" --[hidden]> "Microcontroller Driver"
-    }
-
-    "Stack System" -[hidden]> "Memory Stack"
-
-    rectangle "Memory Stack" {
-        rectangle "Memory Services" #MediumPurple {
-            [NvM] /'NVRAM Manager'/
-        }
-        rectangle "Memory Hardware Abstraction" #YellowGreen {
-            [MemIf] /'Memory Abstraction Interface'/
-            [Ea] /'EEPROM Abstraction'/
-            [Fee] /'Flash EEPROM Emulation'/
-        }    
-        rectangle "Memory Drivers" #Pink {
-            [FlsTst] /'Flash Test'/
-            [RamTst] /'RAM Test'/
-            [Fls] /'Flash Driver'/
-            [Eep] /'EEPROM Driver'/
-        }
-
-        "Memory Services" --[hidden]> "Memory Hardware Abstraction"
-        "Memory Hardware Abstraction" ---[hidden]> "Memory Drivers"
-    }
-
-    rectangle "Com Stack" {
-        rectangle "Communication Services" #MediumPurple {
-            [Com] /'Communication'/
-            [Dcm] /'Diagnostic Communication Manager'/
-            [Dbg] /'debug'/
-            [PduR] /'PDU Router'/
-            [IpduM] /'IPDU Multiplexer'/
-            [SecOC] /'Secure Onboard Communication'/
-            [Xf] /'Transformer'/
-            [NmIf] /'Network Management Interface'/
-            [SM] /'State Manager'/
-            [Nm] /'Network Management'/
-            [Tp] /'Transport Layer'/
-        }
-        rectangle "Communication Hardware Abstraction" #YellowGreen {
-            [xxx Interface]
-            [Trcv] /'Tranceiver Driver'/
-            [ext Drv] /'external driver'/
-        }
-        rectangle "Communication Drivers" #Pink {
-            [Spi] /'SPI Handler Driver'/
-            [Can] /'CAN Driver'/
-            [Lin] /'LIN Driver'/
-            [Eth] /'Ethernet Driver'/
-            [Fr] /'FlexRay Driver'/
-        }
-
-        "Communication Services" ----[hidden]> "Communication Hardware Abstraction"
-        "Communication Hardware Abstraction" ---[hidden]> "Communication Drivers"
-    }
-
-    "Memory Stack" -[hidden]> "Com Stack"
-
-    rectangle "I/O Stack" {
-        rectangle "I/O Hardware Abstraction" #YellowGreen {
-            [I/O Signal Interface]
-            [Driver for external ADC ASIC]
-            [Driver for external I/O ASIC]
-        }
-        rectangle "I/O Drivers" #Pink {
-            [Ocu] /'Output Compare Driver'/
-            [Icu] /'Input Capture Unit Driver'/
-            [Pwm] /'PWM Driver'/
-            [Adc] /'ADC Driver'/
-            [Dio] /'Digital Input/Output Driver'/
-            [Port] /'Port Driver'/
-        }
-
-        "I/O Hardware Abstraction" ---[hidden]> "I/O Drivers"
-    }
-
-    "Com Stack" --[hidden]> "I/O Stack"
-  
-    rectangle "Complex Drivers" {
-        [Cdd_1]
-    }
-
-    "I/O Stack" -[hidden]> "Complex Drivers"
-}
-
-rectangle "MCAL" #gray /'Microcontroller Abstraction Layer'/
-
-ASW --[hidden]> RTE
-RTE --[hidden]> BSW
-BSW --------[hidden]> MCAL
-
-"Communication Hardware Abstraction" -[hidden]> "I/O Hardware Abstraction"
-"Communication Drivers" -[hidden]> "I/O Drivers"
-
-@enduml
-"""
+# app.py
+with open('assets/autosar_basic.puml', 'r', encoding='utf-8') as file:
+    autosar_basic_puml = file.read()
 
 def extract_plantuml_code(response):
     """从响应中提取 PlantUML 代码"""
@@ -198,12 +51,16 @@ def update_llm_config(llm_model, embeddings_model):
         st.session_state["embeddings_model_updated"] = True
         restart_assistant()
 
-def get_or_create_assistant(llm_model, embeddings_model):
+def get_or_create_assistant(llm_model, embeddings_model, custom_prompt):
     """Get or create assistant."""
-    if "rag_assistant" not in st.session_state or st.session_state["rag_assistant"] is None:
+    if ("rag_assistant" not in st.session_state or
+        st.session_state["rag_assistant"] is None or
+        st.session_state.get("custom_prompt") != custom_prompt):
+
         logger.info("---*--- Creating %s Assistant ---*---", llm_model)
-        rag_assistant = get_rag_assistant(llm_model=llm_model, embeddings_model=embeddings_model)
+        rag_assistant = get_rag_assistant(llm_model=llm_model, embeddings_model=embeddings_model, instructions=custom_prompt)
         st.session_state["rag_assistant"] = rag_assistant
+        st.session_state["custom_prompt"] = custom_prompt  # Store the custom prompt in session state
     else:
         rag_assistant = st.session_state["rag_assistant"]
 
@@ -310,8 +167,8 @@ def update_session_content(session_messages, rag_assistant):
                 # Check if the response contains PlantUML code and export it
                 plantuml_code = extract_plantuml_code(response)
                 if plantuml_code:
-                    with open("generated_diagram.puml", "w") as file:
-                        file.write(plantuml_code)
+                    with open("generated_diagram.puml", "w", encoding="utf-8") as puml_file:
+                        puml_file.write(plantuml_code)
 
                 # Add the generated plantUML image and display it in a new popup window
                 image_path = "output.png"
@@ -352,7 +209,7 @@ def main(enable_debug: bool = False) -> None:
     # Side bar configuration for llm and embeddings
     llm_model = st.sidebar.selectbox(
         "Select Model", 
-        options=["llama3.1", "llama3", "phi3", "openhermes", "llama2","gpt-3.5-turbo"]
+        options=["llama3.2", "llama3.2:1b", "llama3.1", "llama3", "phi3", "openhermes", "llama2","gpt-3.5-turbo"]
     )
     embeddings_model = st.sidebar.selectbox(
         "Select Embeddings",
@@ -362,8 +219,17 @@ def main(enable_debug: bool = False) -> None:
 
     update_llm_config(llm_model, embeddings_model)
 
+    # Add a text input in the sidebar for custom prompt
+    custom_prompt = st.sidebar.text_area(
+        "Enter system instruction:",
+        placeholder=(
+            "I want you to be a good assistant...\n"
+            "You need to think like a human...\n"
+        )
+    )
+
     # create instant of assistant
-    rag_assistant = get_or_create_assistant(llm_model, embeddings_model)
+    rag_assistant = get_or_create_assistant(llm_model, embeddings_model, custom_prompt)
 
     load_assistant_chat_history(rag_assistant)
 
