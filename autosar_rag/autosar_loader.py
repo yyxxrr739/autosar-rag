@@ -2,16 +2,17 @@ from typing import AsyncIterator, Iterator
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from pypdf import PdfReader
+from io import BytesIO
 
 class AutosarLoader(BaseLoader):
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, uploaded_file) -> None:
         """Initialize the loader with a file path.
 
         Args:
             file_path: The path to the file to load.
         """
-        self.file_path = file_path
+        self.uploaded_file = uploaded_file
 
 
     def lazy_load(self) -> Iterator[Document]:  # <-- Does not take any arguments
@@ -27,15 +28,14 @@ class AutosarLoader(BaseLoader):
                     text += " "
                 text = text.removeprefix(" ")
                 str_list.append(text)
-
-        with PdfReader(self.file_path) as reader:
+        stream = BytesIO(self.uploaded_file.read())
+        with PdfReader(stream) as reader:
             page_number = 0
             for page in reader.pages[0:5]:
                 page.extract_text(visitor_text=visitor_body)
-                file_name = self.file_path.split('/')[-1]
                 yield Document(
                     page_content="".join(str_list),
-                    metadata={"page_number": page_number, "source": file_name},
+                    metadata={"page_number": page_number, "source": self.uploaded_file.name},
                 )
                 page_number += 1
 
