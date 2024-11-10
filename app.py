@@ -103,7 +103,7 @@ def load_knowledge_base(rag_assistant):
 
     if rag_assistant.knowledge_base.vector_db:
         if st.sidebar.button("Clear Knowledge Base", help="Clear all documents from the knowledge base."):
-            rag_assistant.knowledge_base.vector_db.clear()
+            rag_assistant.knowledge_base.vector_db.drop()
             st.sidebar.success("Knowledge base cleared")
 
 def process_uploaded_file(rag_assistant, uploaded_file):
@@ -118,8 +118,10 @@ def process_uploaded_file(rag_assistant, uploaded_file):
         raw_documents: List[Document] = loader.load()
         rag_documents: List[Document] = splitter.split_documents(raw_documents)
         phi_rag_documents: List[Document] = []
+        # there are some difference in docment defination between langchain Document and phidata Document
+        # so, convert them here for next operation
         for doc in rag_documents:
-            phi_rag_documents.append(Document(content=doc.page_content, meta_data=doc.metadata))
+            phi_rag_documents.append(Document(content=doc.page_content,name=doc.metadata["source"], meta_data=doc.metadata))
         if rag_documents:
             rag_assistant.knowledge_base.load_documents(phi_rag_documents, upsert=True)
         else:

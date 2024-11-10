@@ -1,6 +1,14 @@
 # autosar-chat
 This is a AUTOSAR documents specific retriever based on LLM and RAG.
 
+## Environmental requirements
+
+- Operation System
+    - Linux/MacOS (recommend)
+    - Windwons
+- Docker
+- Python: 3.9.6 (Compatibility issue may occur if version too hign)
+
 ## Installation
 
 ### 1. [Install](https://github.com/ollama/ollama?tab=readme-ov-file#macos) ollama and pull models
@@ -30,9 +38,11 @@ source ~/.venvs/aienv/bin/activate
 pip install -r cookbook/requirements.txt
 ```
 
-### 4. Run PgVector
+### 4. Install Docker
 
-> Install [docker desktop](https://docs.docker.com/desktop/install/mac-install/) first.
+> Install docker follow this doc [Docker](https://docs.docker.com/get-started/get-docker/)
+
+### 5. Run PgVector
 
 - Run using a helper script
 
@@ -53,14 +63,21 @@ docker run -d \
   --name pgvector \
   phidata/pgvector:16
 ```
+### 6. Run Qdrant 
+
+- Run using a helper script
+
+```shell
+./cookbook/run_qdrant.sh
+```
 Note:
 
-If following error occured, please try to change the mirror of docker
+If following error occured in the step 5 or step 6, please try to change the mirror of docker
 
 > docker: error pulling image configuration: download failed after attempts=6: dial tcp 199.16.156.11:443: connect: connection refused.
 
 
-### 5. Run RAG App
+### 7. Run RAG App
 
 ```shell
 streamlit run app.py
@@ -69,7 +86,4 @@ streamlit run app.py
 - Open [localhost:8501](http://localhost:8501) to view your local RAG app.
 
 - Add websites or PDFs and ask question.
-- Example PDF: https://phi-public.s3.amazonaws.com/recipes/ThaiRecipes.pdf
-- Example Websites:
-  - https://techcrunch.com/2024/04/18/meta-releases-llama-3-claims-its-among-the-best-open-models-available/?guccounter=1
-  - https://www.theverge.com/2024/4/23/24137534/microsoft-phi-3-launch-small-ai-language-model
+- Example PDF: ./cookbook/data/AUTOSAR/AUTOSAR_CP_SWS_DiagnosticCommunicationManager-54-78.pdf 
