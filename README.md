@@ -7,7 +7,7 @@ This is a AUTOSAR documents specific retriever based on LLM and RAG.
     - Linux/MacOS (recommend)
     - Windwons
 - Docker
-- Python: 3.9.6 (Compatibility issue may occur if version too hign)
+- Python: 3.9.6 (compatibility issue may occur if version too hign)
 
 ## Installation
 
@@ -40,7 +40,7 @@ pip install -r cookbook/requirements.txt
 
 ### 4. Install Docker
 
-> Install docker follow this doc [Docker](https://docs.docker.com/get-started/get-docker/)
+> Install docker according to this doc [Docker](https://docs.docker.com/get-started/get-docker/)
 
 ### 5. Run PgVector
 
@@ -70,7 +70,19 @@ docker run -d \
 ```shell
 ./cookbook/run_qdrant.sh
 ```
-Note:
+- OR run using the docker run command
+
+```shell
+docker run -itd --name=qdrant \
+    -p 6333:6333 \
+    -p 6334:6334 \
+    -e "QDRANT__SERVICE__API_KEY=123456" \
+    -e "QDRANT__SERVICE__JWT_RBAC=true" \
+    -v /home/qdrant_storage:/qdrant/storage:z \
+        qdrant/qdrant
+```
+
+NOTE:
 
 If following error occured in the step 5 or step 6, please try to change the mirror of docker
 
@@ -85,5 +97,5 @@ streamlit run app.py
 
 - Open [localhost:8501](http://localhost:8501) to view your local RAG app.
 
-- Add websites or PDFs and ask question.
+- Add PDFs or ask question directly
 - Example PDF: ./cookbook/data/AUTOSAR/AUTOSAR_CP_SWS_DiagnosticCommunicationManager-54-78.pdf 
