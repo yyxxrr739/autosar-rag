@@ -7,9 +7,10 @@ import streamlit as st
 from phi.document import Document
 from phi.utils.log import logger
 from PIL import Image
-from docparser.docparser import pdf_parser
 from assistant.assistant import get_rag_assistant
 from posthdl.puml2img import generate_plantuml_image
+from autosar_rag.autosar_loader import AutosarLoader
+from autosar_rag.autosar_splitter import AutosarSplitter
 
 # app.py
 with open('assets/autosar_basic.puml', 'r', encoding='utf-8') as file:
@@ -102,7 +103,7 @@ def load_knowledge_base(rag_assistant):
 
     if rag_assistant.knowledge_base.vector_db:
         if st.sidebar.button("Clear Knowledge Base", help="Clear all documents from the knowledge base."):
-            rag_assistant.knowledge_base.vector_db.clear()
+            rag_assistant.knowledge_base.vector_db.drop()
             st.sidebar.success("Knowledge base cleared")
 
 def process_uploaded_file(rag_assistant, uploaded_file):
@@ -111,9 +112,18 @@ def process_uploaded_file(rag_assistant, uploaded_file):
     rag_name = uploaded_file.name.split(".")[0]
     if f"{rag_name}_uploaded" not in st.session_state:
         # chunk_size and separators can be set here
-        rag_documents: List[Document] = pdf_parser(uploaded_file, chunk_size=300)
+        logger.debug(uploaded_file)
+        loader = AutosarLoader(uploaded_file)
+        splitter = AutosarSplitter(chunk_size=300, chunk_overlap=20)
+        raw_documents: List[Document] = loader.load()
+        rag_documents: List[Document] = splitter.split_documents(raw_documents)
+        phi_rag_documents: List[Document] = []
+        # there are some difference in docment defination between langchain Document and phidata Document
+        # so, convert them here for next operation
+        for doc in rag_documents:
+            phi_rag_documents.append(Document(content=doc.page_content,name=doc.metadata["source"], meta_data=doc.metadata))
         if rag_documents:
-            rag_assistant.knowledge_base.load_documents(rag_documents, upsert=True)
+            rag_assistant.knowledge_base.load_documents(phi_rag_documents, upsert=True)
         else:
             st.sidebar.error("Could not read PDF")
         st.session_state[f"{rag_name}_uploaded"] = True
@@ -209,7 +219,7 @@ def main(enable_debug: bool = False) -> None:
     # Side bar configuration for llm and embeddings
     llm_model = st.sidebar.selectbox(
         "Select Model", 
-        options=["llama3.2", "llama3.2:1b", "llama3.1", "llama3", "phi3", "openhermes", "llama2","gpt-3.5-turbo"]
+        options=["llama3", "llama3.2:1b", "llama3.1", "llama3.2", "phi3", "openhermes", "llama2","gpt-3.5-turbo"]
     )
     embeddings_model = st.sidebar.selectbox(
         "Select Embeddings",

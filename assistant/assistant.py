@@ -1,12 +1,14 @@
 from typing import Optional
-
 from phi.assistant import Assistant
-from phi.knowledge import AssistantKnowledge
 from phi.llm.ollama import Ollama
 from phi.llm.openai import OpenAIChat
 from phi.embedder.ollama import OllamaEmbedder
-from phi.vectordb.pgvector import PgVector2
 from phi.storage.assistant.postgres import PgAssistantStorage
+from phi.vectordb.qdrant import Qdrant
+from phi.knowledge.langchain import LangChainKnowledgeBase
+from autosar_rag.autosar_loader import AutosarLoader
+from autosar_rag.autosar_splitter import AutosarSplitter
+from phi.knowledge import AssistantKnowledge
 
 db_url = "postgresql+psycopg://ai:ai@localhost:5532/ai"
 
@@ -24,17 +26,24 @@ def get_rag_assistant(
     # Define the embedder based on the embeddings model
     embedder = OllamaEmbedder(model=embeddings_model, dimensions=4096)
     embeddings_model_clean = embeddings_model.replace("-", "_")
+
     if embeddings_model == "nomic-embed-text":
         embedder = OllamaEmbedder(model=embeddings_model, dimensions=768)
     elif embeddings_model == "phi3":
         embedder = OllamaEmbedder(model=embeddings_model, dimensions=3072)
-    # Define the knowledge base
+
+    qdrant_url = "http://localhost:6333"
+    api_key = "123456"
+    collection_name = "autosar_rag_db"
+    vector_db = Qdrant(
+        collection=collection_name,
+        url=qdrant_url,
+        api_key=api_key,
+        embedder=embedder
+    )
+
     knowledge = AssistantKnowledge(
-        vector_db=PgVector2(
-            db_url=db_url,
-            collection=f"local_rag_documents_{embeddings_model_clean}",
-            embedder=embedder,
-        ),
+        vector_db=vector_db,
         # 3 references are added to the prompt
         num_documents=3,
     )
